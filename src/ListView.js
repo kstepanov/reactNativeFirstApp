@@ -9,7 +9,7 @@ import {
 import Style from './Style';
 import InputButton from './InputButton';
 
-class ReactCalculator extends Component {
+class ShowList extends Component {
   constructor() {
     super();
     const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
@@ -29,4 +29,4 @@ class ReactCalculator extends Component {
     );
   }
 }
-AppRegistry.registerComponent('ReactCalculator', () => ReactCalculator);
+AppRegistry.registerComponent('FirstApp', () => ShowList);

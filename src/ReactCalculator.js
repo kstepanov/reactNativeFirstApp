@@ -114,5 +114,4 @@ _handleStringInput(str) {
         }
     }
 }
-
-AppRegistry.registerComponent('ReactCalculator', () => ReactCalculator);
+AppRegistry.registerComponent('FirstApp', () => ReactCalculator);
