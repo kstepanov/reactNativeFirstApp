@@ -15,7 +15,7 @@ Text,
 View,ListView
 } from 'react-native';
 
-	var laps=[];
+var laps=[];
 
 export default class testReact extends Component {
 constructor(props) {
@@ -46,7 +46,6 @@ constructor(props) {
 					{this.startStopButton()}
         			{this.lapButton()}    	
  				</View>
- 		 	
     		</View>
     	    	
 			<View style={styles.footer}>
@@ -58,7 +57,6 @@ constructor(props) {
   }
 
   lapsView(){
-  	
   	return <ListView
 		enableEmptySections={true}
         dataSource={this.state.dataSource}
@@ -71,7 +69,6 @@ constructor(props) {
   					{minSecMs(rowData)}
   				</Text>
   			</View>
-          	// <Text>{rowData}</Text>
       }
         />
   }
@@ -82,7 +79,7 @@ startStopButton() {
  	return <TouchableHighlight
 	 	style={[styles.buttonStyle,buttonStyle]}
 	 	underlayColor={buttonColor}
-	 	onPress={this.handleStartPress}>
+	 	onPress={this.handleStartStopPress}>
 			<Text style={styles.buttonTextStyle}>
 				{this.state.isTimerRunning?'STOP':'START'}
 			</Text>
@@ -103,20 +100,23 @@ startStopButton() {
     </TouchableHighlight>
  } 
 	
-	handleStartPress = () => {
+	handleStartStopPress = () => {
 		this.state.startTime = new Date();
-			
-		if (this.state.isTimerRunning){
+		if (!this.state.isTimerRunning){
 			laps=[];
+			this.setState({
+				dataSource: this.state.dataSource.cloneWithRows(laps),
+			}) ;
+	
+		}else{
 			clearInterval(this.interval);
 			this.setState({
 				timeUpdate:null,
 				isTimerRunning:false,
 				dataSource: this.state.dataSource.cloneWithRows(laps),
-			});	
+			}) ;	
 			return;
 		}
-
 		this.interval = setInterval(()=>{
 			this.setState({
 				isTimerRunning:true,
