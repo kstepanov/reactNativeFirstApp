@@ -8,7 +8,6 @@ import React, { Component } from 'react';
 var minSecMs= require ('minutes-seconds-milliseconds');
 import {	
 TouchableHighlight,
-InputButton,
 AppRegistry,
 StyleSheet,
 Text,
