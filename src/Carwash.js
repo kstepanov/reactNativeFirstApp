@@ -4,6 +4,8 @@
  * @flow
  */
 
+import LinearGradient from 'react-native-linear-gradient';
+
 import React, { Component } from 'react';
 var moment= require('moment');
 var minSecMs= require ('minutes-seconds-milliseconds');
@@ -32,19 +34,22 @@ constructor(props) {
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         this.initialState = {
             dataSource:ds.cloneWithRows([]),
+        	colorSource:['transparent','transparent'],
         };
        	this.state = this.initialState;
 		this.getWeatherApi();
     }
-    		 // 
+
   render() {
     return (
-    	<View style={styles.container}>
+
+
+    	<View style={styles.container}>	
 			<View style={{marginLeft:16}}>
 				<Text style={{fontSize:14,color:'#ffffff',opacity:0.5}}>PLANET</Text>				
 				<Text style={{fontSize:25,color:'white'}}>Earth</Text>
 			</View>
-
+		
 			<View style={{top:50,alignItems:'center',justifyContent:'center'}}>
 				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff'}}>We recommend you {'\n'} to wash your car on:</Text> 
 				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff', textDecorationLine: 'underline' }} >Thursday, 22</Text>
@@ -54,7 +59,7 @@ constructor(props) {
 			{this.showListViewWithBackground()}
 			{this.showCarView()}
 			{this.showCarStateButtonView()}
-		
+
 	   	</View>
     );
   }
@@ -67,15 +72,7 @@ constructor(props) {
 			</View>
  	}
 	showCarView(){
-		return <View
-		style={{
-			position: 'absolute',
-			right:0,
-			left:0,
-			bottom:175,
-			alignItems:'center'
-		}}
-			>
+		return <View style={styles.carWheelContainerStyle}>
 		 	<Image 
 				style={styles.carWheelStyle}
     			source={car_wheel}/>
@@ -105,31 +102,40 @@ constructor(props) {
 			onScroll={this.handleScroll} scrollEventThrottle={10} 
 			showsHorizontalScrollIndicator={false}
 	        horizontal={true}>
+
 		 	<View style={styles.scrollableView}>
 					<Image style={styles.backgroundStyle}
 							source={background_street}/>
-
+			    	
 			 		<View style={styles.horizontalListView}>
+			 			<LinearGradient
+				    		start={{x: 0.0, y: 0}} end={{x: 1, y: 0}}
+			    			style={{height:10}}
+							colors={this.state.colorSource}
+							/>
+
 						<ListView 
 					  	    showsHorizontalScrollIndicator={false}
 				  			horizontal={true}
 							enableEmptySections={true}
 					        dataSource={this.state.dataSource}
 					        renderRow={(rowData,sectionID,rowID) => 
-										<View style={styles.itemStyle}>
-											{this.getItemWeatherImage(rowData.weather[0].icon)}
-								    		{this.getItemWeatherText(rowID,rowData.dt)}
-								    	</View>
-					    			}	
+						    	this.getItemWeather(rowID,rowData)
+							}	
 						/>	 
 					</View>
 		 	</View>
 		</ScrollView> 
  	}
 
- 	getItemWeatherImage(icon){
- 		var drawable = "";
-		 switch (icon) {
+	getItemWeather (position,rowData){
+		var simpleDate ='NOW';
+		var miliseconds = rowData.dt;
+		var drawable = rowData.weather[0].icon;
+		if(position!=0){
+			simpleDate = moment(miliseconds*1000).format("ddd, D").toUpperCase();
+		}
+		 switch (drawable) {
             case '01d':
             		drawable=icon_clear_sky;
                 break;
@@ -158,34 +164,53 @@ constructor(props) {
             break;
 
         }
-		return <Image 
-			style={styles.imageItemStyle}
-			source={drawable}
-		/>
- 	}
-		
-	getItemWeatherText(position, miliseconds){
-		var simpleDate ='NOW';
-		if(position!=0){
-			simpleDate = moment(miliseconds*1000).format("ddd, D").toUpperCase();
-		}
-		return <Text style={{fontSize:10,color:'#ffffff'}}>
-					{simpleDate}
+
+		return	<View style={styles.itemStyle}>
+				<Image 
+					style={styles.imageItemStyle}
+					source={drawable}
+					/>
+				<Text style={{fontSize:10,color:'#ffffff'}}>
+						{simpleDate}
 				</Text>
- 	}
-	handleLapPress = () => {
-			laps=laps.concat(2);
-			this.setState({
-				dataSource: this.state.dataSource.cloneWithRows(laps),
-			});	
+			</View>
 	}
+
+
+		
+	// getItemWeatherText(position, miliseconds){
+		
+ // 	}
+
 	async getWeatherApi() {
 	    try {
 	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat=44.6166&lon=33.5254');
 	    let responseJson = await response.json();
-	      // return responseJson.list;
+	    var weatherList  =responseJson.list;
+	    
+		var weatherColorArray=[];
+		for (var i = 0; i < weatherList.length; i++) {
+			var icon = weatherList[i].weather[0].icon;
+				switch (icon) {
+		            case '01d':
+		            		weatherColorArray.push('#00F000');
+		                break;
+					case '02d':
+							weatherColorArray.push('#FFC300');
+		                break;
+					case '03d':
+					case '04d':						
+							weatherColorArray.push('#FBFF3D');
+		                break;
+		                default:
+		                	weatherColorArray.push('#FF6183');
+	  	        }
+        }
+	
+
 	    this.setState({
-				dataSource: this.state.dataSource.cloneWithRows(responseJson.list),
+			dataSource: this.state.dataSource.cloneWithRows(weatherList),
+        	colorSource:this.state.colorSource=weatherColorArray	
 			});
 	    } catch(error) {
 	      console.error(error);
@@ -212,6 +237,14 @@ var styles = StyleSheet.create({
 		resizeMode: 'contain',
 		height:40
 	},
+
+	carWheelContainerStyle:{
+		position: 'absolute',
+		right:0,
+		left:0,
+		bottom:170,
+		alignItems:'center'
+	},
 	carWheelStyle:{
 		width:200,
 		resizeMode: 'contain',
@@ -233,8 +266,6 @@ var styles = StyleSheet.create({
 
 	horizontalListView:{
 		height:95,
-		borderTopColor:'red',
-  		borderTopWidth:5
 	},	
 	carViewStateStyle:{
 		height:75,
@@ -247,12 +278,14 @@ var styles = StyleSheet.create({
  		height: undefined,
  		justifyContent: 'center',
     	alignItems: 'center',
+    	bottom:-10,
     	resizeMode:'cover'
  	},
  	scrollableView:{
  		alignItems:'flex-end',
  		justifyContent:'flex-end'
- 	}
+ 	},
+
 });
 
 AppRegistry.registerComponent('FirstApp', () => Carwash);
