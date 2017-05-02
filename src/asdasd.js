@@ -60,12 +60,8 @@ render() {
 			{...this.state.panResponder.panHandlers}
          	style={this.state.pan.getLayout()}
          	>
-         	<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
-    	    <Image style={{position:'absolute', marginTop:50, right:10,height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>		    	
-    		<Image style={{position:'absolute', marginTop:150, right:10,height:100,width:50, right:100,resizeMode:'contain'}}source={cloud_2}/>
-    		<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
+         		         	<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
     		
-       </Animated.View>
     		
 			<View style={{marginLeft:16}}>
 				<Text style={{fontSize:14,color:'#ffffff',opacity:0.5}}>{this.state.country}</Text>				
@@ -76,6 +72,7 @@ render() {
 				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff'}}>We recommend you {'\n'} to wash your car on:</Text> 
 				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff', textDecorationLine: 'underline' }} >Thursday, 22</Text>
 			</View>
+			
 
 			{this.showListViewWithBackground()}
 			{this.showCarView()}
@@ -116,7 +113,7 @@ render() {
 	
 
 	handleScroll=(event: Object)  => {		
-		this.state.pan.x  = -0.05*event.nativeEvent.contentOffset.x; 
+		this.state.pan.x  = -0.005*event.nativeEvent.contentOffset.x; 
  		this.setState({
 			pan:this.state.pan	
  		});
