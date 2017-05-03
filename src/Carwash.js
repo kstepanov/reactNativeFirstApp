@@ -31,10 +31,11 @@ import {
 	AppRegistry,
 	StyleSheet,
 	Text,Dimensions,
-	View,ListView,ScrollView,Image,
+	View,ListView,ScrollView,Image,PermissionsAndroid,
 	PanResponder,
 	Animated,} from 'react-native';
 
+exports.title = 'Geolocation';
 
 export default class Carwash extends Component {
 
@@ -44,28 +45,74 @@ constructor(props) {
  	this.state = {
  		city:'Earth',
  		country:'PLANET',
+ 		message:'Well... Let\'s wait for a better\n day for your car wash',
+ 		washDate:"",
 	    dataSource:ds.cloneWithRows([]),
         colorSource:['transparent','transparent'],
 		pan: new Animated.ValueXY(), // inits to zero
+		pan2: new Animated.ValueXY(), // inits to zero
 		panResponder: PanResponder.create({onStartShouldSetPanResponder: () => true})	
 		};
-	this.getWeatherApi();
+}
+
+
+async locationAction() {
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        'title': '`Persmission title',
+        'message': 'Permission msg'
+      }
+    )
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      console.log("Do location action")
+    } else {
+      console.log("Do non-location thing")
+    }
+  } catch (err) {
+    console.warn(err)
+  }
+}
+componentDidMount() {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.setState({position});
+        this.getWeatherApi(position);
+      },
+      (error) =>{console.log(JSON.stringify(error))},
+      {enableHighAccuracy: true, timeout: 10000, maximumAge: 5000}
+    );
+
+    this.watchID = navigator.geolocation.watchPosition((position) => {
+      this.setState({position});
+      this.getWeatherApi(position);
+    });
+
+}
+
+componentWillUnmount() {
+    navigator.geolocation.clearWatch(this.watchID);
 }
 
 render() {
     return (
     	<View style={styles.container}>	
     		
-		<Animated.View
-			{...this.state.panResponder.panHandlers}
-         	style={this.state.pan.getLayout()}
-         	>
-         	<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
-    	    <Image style={{position:'absolute', marginTop:50, right:10,height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>		    	
-    		<Image style={{position:'absolute', marginTop:150, right:10,height:100,width:50, right:100,resizeMode:'contain'}}source={cloud_2}/>
-    		<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
-    		
-       </Animated.View>
+			<Animated.View
+				{...this.state.panResponder.panHandlers}
+	         	style={this.state.pan.getLayout()}>
+	         	<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
+	         	<Image style={{position:'absolute', marginTop:150, right:10,height:100,width:50, right:100,resizeMode:'contain'}}source={cloud_2}/>
+	    		
+	       </Animated.View>
+	       <Animated.View
+				{...this.state.panResponder.panHandlers}
+	         	style={this.state.pan2.getLayout()}>
+				<Image style={{position:'absolute', marginTop:50, right:10,height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>		    	
+	    		<Image style={{position:'absolute', top:150, left:70,height:100,width:50,resizeMode:'contain'}}source={cloud_3}/>
+	    		
+	       </Animated.View>
     		
 			<View style={{marginLeft:16}}>
 				<Text style={{fontSize:14,color:'#ffffff',opacity:0.5}}>{this.state.country}</Text>				
@@ -73,8 +120,8 @@ render() {
 			</View>
 		
 			<View style={{top:50,alignItems:'center',justifyContent:'center'}}>
-				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff'}}>We recommend you {'\n'} to wash your car on:</Text> 
-				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff', textDecorationLine: 'underline' }} >Thursday, 22</Text>
+				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff'}}>{this.state.message}</Text> 
+				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff', textDecorationLine: 'underline' }} >{this.state.washDate}</Text>
 			</View>
 
 			{this.showListViewWithBackground()}
@@ -116,9 +163,12 @@ render() {
 	
 
 	handleScroll=(event: Object)  => {		
-		this.state.pan.x  = -0.05*event.nativeEvent.contentOffset.x; 
+		this.state.pan.x  = -0.005*event.nativeEvent.contentOffset.x; 
+ 		this.state.pan2.x  = -0.015*event.nativeEvent.contentOffset.x; 
+
  		this.setState({
-			pan:this.state.pan	
+			pan:this.state.pan,	
+			pan2:this.state.pan2	
  		});
 		console.log(this.state.offset_x);
 	}
@@ -155,6 +205,7 @@ render() {
 		 	</View>
 		</ScrollView> 
  	}
+
 
 	getItemWeather (position,rowData){
 		var simpleDate ='NOW';
@@ -204,9 +255,14 @@ render() {
 			</View>
 	}
 
-	async getWeatherApi() {
+// : {"mocked":false,"timestamp":1493822251678,"coords":{"speed":0,"heading":0,"accuracy":20.174999237060547,"longitude":33.4458422,"altitude":0,"latitude":44.5921648}}
+	async getWeatherApi(position) {
+		// position = JSON.parse(position);
+		var lat = position.coords.latitude;
+		var lon = position.coords.longitude;	
+		console.log(lat, lon);
 	    try {
-	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat=44.6166&lon=33.5254');
+	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat='+lat+'&lon='+lon);
 	    let responseJson = await response.json();
 	    var weatherList  =responseJson.list;
 	    
@@ -215,30 +271,42 @@ render() {
 			var icon = weatherList[i].weather[0].icon;
 				switch (icon) {
 		            case '01d':
-		            		weatherColorArray.push('#00F000');
+		            		weatherColorArray.push('#00F000','#00F000');
 		                break;
 					case '02d':
-							weatherColorArray.push('#FFC300');
+							weatherColorArray.push('#FFC300','#FFC300');
 		                break;
 					case '03d':
 					case '04d':						
-							weatherColorArray.push('#FBFF3D');
+							weatherColorArray.push('#FBFF3D','#FBFF3D');
 		                break;
 		                default:
-		                	weatherColorArray.push('#FF6183');
+		                	weatherColorArray.push('#FF6183','#FF6183');
 	  	        }
         }
 	
 
 	    this.setState({
-			dataSource: this.state.dataSource.cloneWithRows(weatherList),
+	    	city:this.state.city=responseJson.city.name,
+	    	country:this.state.city=responseJson.city.country,
+	    	dataSource: this.state.dataSource.cloneWithRows(weatherList),
         	colorSource:this.state.colorSource=weatherColorArray	
 			});
 	    } catch(error) {
 	      console.error(error);
 	    }
+	
+	// 	this.analyseWeather();
+	// }
+	// analyseWeather(){
+	// 	this.setState({
+	// 		message:this.state.message='We recommend you to\n wash your car on:',
+	// 		washDate:this.state.washDate='Tuesday, 22',
+	// 	});
 	}
 }
+
+	
 
 var styles = StyleSheet.create({
 	container:{
@@ -254,10 +322,10 @@ var styles = StyleSheet.create({
 		alignItems:'center'
 		},
 	imageItemStyle:{
-		marginBottom:10,
-		width:40,
-		resizeMode: 'contain',
-		height:40
+		width:50,
+		height:50,
+		bottom:10,
+		resizeMode: 'center',
 	},
 
 	carWheelContainerStyle:{
@@ -298,10 +366,11 @@ var styles = StyleSheet.create({
 		width:15*72+15*1,
  		flex:1,
  		height: undefined,
- 		justifyContent: 'center',
-    	alignItems: 'center',
     	bottom:-10,
-    	resizeMode:'cover'
+    	resizeMode:'cover',
+
+ 	 	justifyContent: 'center',
+    	alignItems: 'center',
  	},
  	scrollableView:{
  		alignItems:'flex-end',
@@ -310,4 +379,4 @@ var styles = StyleSheet.create({
 
 });
 
-AppRegistry.registerComponent('FirstApp', () => Carwash);
+AppRegistry.registerComponent('Carwash', () => Carwash);
