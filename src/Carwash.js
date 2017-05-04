@@ -25,15 +25,16 @@ var cloud_2=require('./img/cloud_2.png');
 var cloud_3=require('./img/cloud_3.png');
 var cloud_4=require('./img/cloud_4.png');
 
-
+const SUN_DAYS= 3;
 import {	
 	TouchableOpacity, 
 	AppRegistry,
 	StyleSheet,
-	Text,Dimensions,
+	Text,Dimensions,TouchableHighlight,
 	View,ListView,ScrollView,Image,PermissionsAndroid,
 	PanResponder,
-	Animated,} from 'react-native';
+	Animated,
+    Easing} from 'react-native';
 
 exports.title = 'Geolocation';
 
@@ -47,6 +48,7 @@ constructor(props) {
  		country:'PLANET',
  		message:'Well... Let\'s wait for a better\n day for your car wash',
  		washDate:"",
+ 		carState:2,
 	    dataSource:ds.cloneWithRows([]),
         colorSource:['transparent','transparent'],
 		pan: new Animated.ValueXY(), // inits to zero
@@ -88,12 +90,7 @@ componentDidMount() {
       this.setState({position});
       this.getWeatherApi(position);
     });
-
-}
-
-componentWillUnmount() {
-    navigator.geolocation.clearWatch(this.watchID);
-}
+ }
 
 render() {
     return (
@@ -134,9 +131,13 @@ render() {
 
  	showCarStateButtonView(){
  		return <View style={styles.carViewStateStyle}>
+				
+				<View style={[styles.roundButtonStyle]} />
+ 			
 				{this.cleanButton()}
 				{this.normalButton()}    	
 				{this.dirtyButton()}
+
 			</View>
  	}
 	showCarView(){
@@ -147,10 +148,12 @@ render() {
     	</View>
 	}
 
-	
+handleLapPress = () => {
+
+}	
 
 	cleanButton(){
-		return <View style={styles.buttonStyle}><Text style={styles.textButtonStyle}>CLEAN</Text></View>
+		return <View style={[styles.buttonStyle]}><Text style={styles.textButtonStyle}>CLEAN</Text></View>
 	}
 
 	normalButton(){
@@ -197,8 +200,25 @@ render() {
 				  			horizontal={true}
 							enableEmptySections={true}
 					        dataSource={this.state.dataSource}
-					        renderRow={(rowData,sectionID,rowID) => 
-						    	this.getItemWeather(rowID,rowData)
+					        renderRow={(rowData,sectionID,rowID) => 						
+									<View style={styles.itemStyle}>
+										<Image 
+											style={styles.imageItemStyle}
+											source={this.getItemDrawable(rowData.weather[0])}
+											/>
+										<Text style={{fontSize:10,color:'#ffffff'}}>
+												{(rowID!=0)?this.getItemText(rowData.dt*1000):'NOW'}
+										</Text>
+											
+										<View style={{position:'absolute',backgroundColor:'#367DAA',
+													bottom:0,
+													width:72,
+													height:1}}/>
+										<View style={{position:'absolute',backgroundColor:'#367DAA',
+													right:0,
+													width:1,
+													height:96}} />
+									</View>
 							}	
 						/>	 
 					</View>
@@ -206,59 +226,23 @@ render() {
 		</ScrollView> 
  	}
 
-
-	getItemWeather (position,rowData){
-		var simpleDate ='NOW';
-		var miliseconds = rowData.dt;
-		var drawable = rowData.weather[0].icon;
-		if(position!=0){
-			simpleDate = moment(miliseconds*1000).format("ddd, D").toUpperCase();
-		}
-		 switch (drawable) {
-            case '01d':
-            		drawable=icon_clear_sky;
-                break;
-            case '02d':
-            		drawable=icon_few_clouds;
-                break;
-            case '03d':
-            case '04d':
-            		drawable=icon_clouds;
-                break;
-			case '09d':
-            case '10d':
-            		drawable=icon_rain;
-                break;
-
-			case '11d':
-            	drawable=icon_thunderstorm;
-            	break;
-			
-			case '13d':
-            	drawable=icon_snow;
-            break;
-            
-            case '50d':
-            	drawable=icon_mist;
-            break;
-
-        }
-
-		return	<View style={styles.itemStyle}>
-				<Image 
-					style={styles.imageItemStyle}
-					source={drawable}
-					/>
-				<Text style={{fontSize:10,color:'#ffffff'}}>
-						{simpleDate}
-				</Text>
-			</View>
+	getItemDrawable(weather){
+		var drawable = icon_clear_sky;
+	    if (weather.icon.match('01'))drawable=icon_clear_sky;               
+        if (weather.icon.match('02'))drawable=icon_few_clouds;
+        if (weather.icon.match('04')||weather.icon.match('03'))drawable=icon_clouds;
+        if (weather.icon.match('09')||weather.icon.match('10'))drawable=icon_rain
+        if (weather.icon.match('11'))drawable=icon_thunderstorm;
+		if (weather.icon.match('13'))drawable=icon_snow;
+		if (weather.icon.match('50'))drawable=icon_mist;
+		return drawable;
+	}
+	getItemText(miliseconds){
+		return 	moment(miliseconds).format("ddd, D").toUpperCase();
 	}
 
-// : {"mocked":false,"timestamp":1493822251678,"coords":{"speed":0,"heading":0,"accuracy":20.174999237060547,"longitude":33.4458422,"altitude":0,"latitude":44.5921648}}
 	async getWeatherApi(position) {
-		// position = JSON.parse(position);
-		var lat = position.coords.latitude;
+		let lat = position.coords.latitude;
 		var lon = position.coords.longitude;	
 		console.log(lat, lon);
 	    try {
@@ -266,25 +250,33 @@ render() {
 	    let responseJson = await response.json();
 	    var weatherList  =responseJson.list;
 	    
+	    var goodDayArray=[];
 		var weatherColorArray=[];
 		for (var i = 0; i < weatherList.length; i++) {
-			var icon = weatherList[i].weather[0].icon;
-				switch (icon) {
-		            case '01d':
-		            		weatherColorArray.push('#00F000','#00F000');
-		                break;
-					case '02d':
-							weatherColorArray.push('#FFC300','#FFC300');
-		                break;
-					case '03d':
-					case '04d':						
-							weatherColorArray.push('#FBFF3D','#FBFF3D');
-		                break;
-		                default:
-		                	weatherColorArray.push('#FF6183','#FF6183');
-	  	        }
-        }
-	
+			var item = weatherList[i];
+			var icon = item.weather[0].icon;
+			
+			if (icon.match('01')){
+		        goodDayArray.push(item);
+				color = '#00F000';
+		    } else{
+		    	if(goodDayArray.length<this.state.carState) goodDayArray =[];
+		    	color = '#FF6183';
+		    }
+		
+		    if (icon.match('02')){
+				color = '#FFC300';
+			}
+		
+			if (icon.match('03')||icon.match('04')){
+				color = '#FBFF3D';
+		    }
+		    
+		    if (icon.match('03')||icon.match('04')){
+				color = '#FBFF3D';
+			}
+			weatherColorArray.push(color,color);
+        } 
 
 	    this.setState({
 	    	city:this.state.city=responseJson.city.name,
@@ -295,14 +287,16 @@ render() {
 	    } catch(error) {
 	      console.error(error);
 	    }
-	
-	// 	this.analyseWeather();
-	// }
-	// analyseWeather(){
-	// 	this.setState({
-	// 		message:this.state.message='We recommend you to\n wash your car on:',
-	// 		washDate:this.state.washDate='Tuesday, 22',
-	// 	});
+
+	    console.log('goodDayArray',goodDayArray);
+        
+        if (goodDayArray.length>=this.state.carState){
+        	goodDayArray[0].dt
+	       this.setState({
+				message:this.state.message='We recommend you to\n wash your car on:',
+				washDate:this.state.washDate=moment(goodDayArray[0].dt*1000).format("dddd, D"),
+			});
+        }
 	}
 }
 
@@ -310,14 +304,13 @@ render() {
 
 var styles = StyleSheet.create({
 	container:{
-		backgroundColor:'#1072A3',
+		backgroundColor:'#046B9E',
 		flex:1
 	},
 	itemStyle:{
 		marginRight:1,
 		width:72,
 		height:95,
-		backgroundColor:'#50321323',
 		justifyContent:'center',
 		alignItems:'center'
 		},
@@ -337,6 +330,7 @@ var styles = StyleSheet.create({
 	},
 	carWheelStyle:{
 		width:200,
+		bottom:10,
 		resizeMode: 'contain',
 		height:70,
 		marginLeft:5,
@@ -346,19 +340,33 @@ var styles = StyleSheet.create({
 	buttonStyle:{
 		flex:1,
 		alignItems:'center',
-		justifyContent:'center'
+		justifyContent:'center',
+		
 	},
-	
+
+ roundButtonStyle:{
+	 	position:'absolute',
+
+		height:40,
+		width:120,
+
+		borderColor:'white',
+		backgroundColor:'white',
+		// margin:10,
+		borderRadius:20,	
+	 },	
 	textButtonStyle:{
-		fontSize:16,
-		color:"white",
+		fontSize:12,
+		color:"#6D90A5",
 	},
 
 	horizontalListView:{
-		height:95,
+		height:105,
 	},	
 	carViewStateStyle:{
 		height:75,
+		alignItems:'center',
+		justifyContent:'center',
 		flexDirection:'row'
 	},
  	
