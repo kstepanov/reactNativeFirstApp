@@ -36,8 +36,9 @@ import {
 	Animated,
     Easing} from 'react-native';
 
-exports.title = 'Geolocation';
+import Interactable from 'react-native-interactable';
 
+exports.title = 'Geolocation';
 export default class Carwash extends Component {
 
 constructor(props) {
@@ -48,12 +49,10 @@ constructor(props) {
  		country:'PLANET',
  		message:'Well... Let\'s wait for a better\n day for your car wash',
  		washDate:"",
- 		carState:2,
+ 		carState:0,
 	    dataSource:ds.cloneWithRows([]),
         colorSource:['transparent','transparent'],
-		pan: new Animated.ValueXY(), // inits to zero
-		pan2: new Animated.ValueXY(), // inits to zero
-		panResponder: PanResponder.create({onStartShouldSetPanResponder: () => true})	
+		offset_x:0,
 		};
 }
 
@@ -95,22 +94,27 @@ componentDidMount() {
 render() {
     return (
     	<View style={styles.container}>	
-    		
-			<Animated.View
-				{...this.state.panResponder.panHandlers}
-	         	style={this.state.pan.getLayout()}>
-	         	<Image style={{position:'absolute', margin:10,height:100,width:50,resizeMode:'contain'}}source={cloud}/>
-	         	<Image style={{position:'absolute', marginTop:150, right:10,height:100,width:50, right:100,resizeMode:'contain'}}source={cloud_2}/>
-	    		
-	       </Animated.View>
-	       <Animated.View
-				{...this.state.panResponder.panHandlers}
-	         	style={this.state.pan2.getLayout()}>
-				<Image style={{position:'absolute', marginTop:50, right:10,height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>		    	
-	    		<Image style={{position:'absolute', top:150, left:70,height:100,width:50,resizeMode:'contain'}}source={cloud_3}/>
-	    		
-	       </Animated.View>
-    		
+    		<Interactable.View style={{left :50,position:'absolute'}}
+    				initialPosition={{x: -0.025*this.state.offset_x, y: 0}}>
+						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud}/>
+	       </Interactable.View>
+		
+			<Interactable.View style={{right: 50, top:175,position:'absolute'}}	
+	       		initialPosition={{x: -0.015*this.state.offset_x, y: 0}}>
+				         	<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_2}/>
+	       </Interactable.View>
+		
+			<Interactable.View style={{right :50,position:'absolute'}}
+    				initialPosition={{x: -0.01*this.state.offset_x, y: 0}}>
+						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_3}/>
+	       </Interactable.View>
+		
+			<Interactable.View style={{right: 250, top:125,position:'absolute'}}	
+	       		initialPosition={{x: -0.005*this.state.offset_x, y: 0}}>
+				         	<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>
+	       </Interactable.View>
+		
+
 			<View style={{marginLeft:16}}>
 				<Text style={{fontSize:14,color:'#ffffff',opacity:0.5}}>{this.state.country}</Text>				
 				<Text style={{fontSize:25,color:'white'}}>{this.state.city}</Text>
@@ -130,14 +134,18 @@ render() {
   }
 
  	showCarStateButtonView(){
- 		return <View style={styles.carViewStateStyle}>
-				
-				<View style={[styles.roundButtonStyle]} />
- 			
-				{this.cleanButton()}
-				{this.normalButton()}    	
-				{this.dirtyButton()}
+ 		return <View style={styles.carViewStateStyle}>		
+			<Interactable.View 
+			  ref='roundInstance'
+			  horizontalOnly={true}
+			  snapPoints={[{x: 0} ,{x: 125},{x:255}]}
+			  style={{position:'absolute'}}>
+	       		<View style={[styles.roundButtonStyle]} />
+ 			</Interactable.View>
 
+					{this.cleanButton()}
+					{this.normalButton()}    	
+					{this.dirtyButton()}
 			</View>
  	}
 	showCarView(){
@@ -148,36 +156,51 @@ render() {
     	</View>
 	}
 
-handleLapPress = () => {
-
-}	
 
 	cleanButton(){
-		return <View style={[styles.buttonStyle]}><Text style={styles.textButtonStyle}>CLEAN</Text></View>
+		return <TouchableHighlight 
+					underlayColor='transparent'
+					style={[styles.buttonStyle]}
+			 		onPress={this.handlePress.bind(this, 0)}>
+					<Text style={styles.textButtonStyle}>CLEAN</Text>
+				</TouchableHighlight>
 	}
 
 	normalButton(){
-		return <View style={styles.buttonStyle}><Text style={styles.textButtonStyle}>NORMAL</Text></View>
+		return <TouchableHighlight 
+					underlayColor='transparent'
+					style={styles.buttonStyle}
+			 		onPress={this.handlePress.bind(this, 1)}>
+						<Text style={styles.textButtonStyle}>NORMAL</Text>
+				</TouchableHighlight>
 	}
 
 	dirtyButton(){
-		return <View style={styles.buttonStyle}><Text style={styles.textButtonStyle}>DIRTY</Text></View>
+		return <TouchableHighlight 
+					underlayColor='transparent'
+					style={styles.buttonStyle}
+			 		onPress={this.handlePress.bind(this, 2)}>
+		 					<Text style={styles.textButtonStyle}>DIRTY</Text>
+	 			</TouchableHighlight>
 	}
 	
 
 	handleScroll=(event: Object)  => {		
-		this.state.pan.x  = -0.005*event.nativeEvent.contentOffset.x; 
- 		this.state.pan2.x  = -0.015*event.nativeEvent.contentOffset.x; 
-
+		this.state.offset_x = event.nativeEvent.contentOffset.x; 
  		this.setState({
-			pan:this.state.pan,	
-			pan2:this.state.pan2	
+			offset_x:this.state.offset_x
  		});
-		console.log(this.state.offset_x);
 	}
 
+	handlePress = (what) => {
+		console.log(what);
+ 	    this.setState({
+	      carState: this.state.carState=what 
+	    });
 
-	
+	 	this.refs['roundInstance'].snapTo({index: this.state.carState});
+	}
+
 	showListViewWithBackground(){
 		return <ScrollView
 			onScroll={this.handleScroll} scrollEventThrottle={10} 
@@ -244,7 +267,7 @@ handleLapPress = () => {
 	async getWeatherApi(position) {
 		let lat = position.coords.latitude;
 		var lon = position.coords.longitude;	
-		console.log(lat, lon);
+
 	    try {
 	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat='+lat+'&lon='+lon);
 	    let responseJson = await response.json();
@@ -288,7 +311,6 @@ handleLapPress = () => {
 	      console.error(error);
 	    }
 
-	    console.log('goodDayArray',goodDayArray);
         
         if (goodDayArray.length>=this.state.carState){
         	goodDayArray[0].dt
@@ -345,14 +367,11 @@ var styles = StyleSheet.create({
 	},
 
  roundButtonStyle:{
-	 	position:'absolute',
-
-		height:40,
-		width:120,
-
+		height:30,
+		width:90,
+		marginLeft:15,
 		borderColor:'white',
 		backgroundColor:'white',
-		// margin:10,
 		borderRadius:20,	
 	 },	
 	textButtonStyle:{
@@ -366,7 +385,6 @@ var styles = StyleSheet.create({
 	carViewStateStyle:{
 		height:75,
 		alignItems:'center',
-		justifyContent:'center',
 		flexDirection:'row'
 	},
  	

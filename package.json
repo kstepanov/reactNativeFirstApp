@@ -11,6 +11,7 @@
     "moment": "^2.18.1",
     "react": "16.0.0-alpha.6",
     "react-native": "0.43.3",
+    "react-native-interactable": "0.0.8",
     "react-native-linear-gradient": "^2.0.0"
   },
   "devDependencies": {
