@@ -28,9 +28,9 @@ export default class AppCarwash extends Component {
 constructor(props) {
   super(props);
  	this.state = 	{
+ 		carState:0,
 		message:'Well... Let\'s wait for a better\n day for your car wash',
  		washDate:"",
- 		offset_x:0,
 		};
 
 }
@@ -39,16 +39,14 @@ constructor(props) {
 render() {
     return (
     	<View style={styles.container}>	
-    		<Interactable.View style={{left :50,position:'absolute'}}
-    				initialPosition={{x: -0.025*this.state.offset_x, y: 0}}>
+    		<Interactable.View style={{left :50,position:'absolute'}}>
 						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud}/>
 	       </Interactable.View>
 		
-			<Interactable.View style={{right: 50, top:175,position:'absolute'}}	
-	       		initialPosition={{x: -0.015*this.state.offset_x, y: 0}}>
+			<Interactable.View style={{right: 50, top:175,position:'absolute'}}>
 				         	<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_2}/>
 	       </Interactable.View>
-		
+			
 			<View style={{right :50,position:'absolute'}}>
 						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_3}/>
 	       </View>
@@ -69,19 +67,33 @@ render() {
 			</View>
 
 			<Forecast 
-			callbackWashdate={this.handleWashdate.bind(this)}
-			callbackCity={this.handleChanges.bind(this)}/>
+				carState = {this.state.carState}
+				callbackWashdate={this.handleWashdate.bind(this)}
+				callbackCity={this.handleChanges.bind(this)}
+				callbackLocationError= {this.handleLocationError.bind(this)}
+				callbackServerError= {this.handleServerError.bind(this)}
+			/>
+				
 			<Car/>	
-			<CarState callback ={this.handleState.bind(this)}/>
+			<CarState callbackState ={this.handleState.bind(this)}/>
 	   	</View>
     );
   }
-	
+
+	handleLocationError(result){
+		console.log('location',result);
+	}
+
+	handleServerError(result){
+		console.Let('server',result);
+	}
+
 	handleWashdate(result){
-	if (result.length>=0){
-		this.setState({
-			message:this.state.message='We recommend you to\n wash your car on:',
-			washDate:this.state.washDate=moment(result[0].dt*1000).format("dddd, D"),
+		console.log('result',result);
+		if (result.length>=this.state.carState){
+			this.setState({
+				message:this.state.message='We recommend you to\n wash your car on:',
+				washDate:this.state.washDate=moment(result[0].dt*1000).format("dddd, D"),
 			}); 
 		}
 	}
@@ -93,14 +105,12 @@ render() {
     }	
 
 	handleState(result) {
-	this.setState({
-		city:this.state.city = result.name,
-		country:this.state.country = result.country
-	});
-}	
+		console.log('state',result);
+		this.setState({
+			carState:this.state.carState = result,
+		});
+	}	
 }
-
-	
 
 var styles = StyleSheet.create({
 	container:{

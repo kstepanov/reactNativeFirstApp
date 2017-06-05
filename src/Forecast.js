@@ -7,6 +7,7 @@ import {
 
 import Interactable from 'react-native-interactable';
 import LinearGradient from 'react-native-linear-gradient';
+import AddCalendarEvent from 'react-native-add-calendar-event';
 
 
 
@@ -27,7 +28,6 @@ export default class Forecast extends Component {
  		this.state = {
  		dataSource:ds.cloneWithRows([]),
         colorSource:['transparent','transparent'],
-		offset_x:0,
 		};
 	}  
 
@@ -37,19 +37,18 @@ export default class Forecast extends Component {
 			   		this.getWeatherApi(position.coords);
 		      },
 		      (error) =>{
-		     	console.log('FAIL CONNECTION',error);
+		     	this.props.callbackLocationError(error);
 		      },
 		      {enableHighAccuracy: true, timeout: 20000, maximumAge: 5000}
 		    );
 
 		    this.watchID = navigator.geolocation.watchPosition((position) => {
-			    this.getWeatherApi(position.coords);
+			this.getWeatherApi(position.coords);
 		});
 	  	
 	  }
     render() {
 		return <ScrollView
-					// onScroll={this.handleScroll} scrollEventThrottle={10} 
 					showsHorizontalScrollIndicator={false}
 			        horizontal={true}>
 
@@ -65,7 +64,7 @@ export default class Forecast extends Component {
 									/>
 
 								<ListView 
-							  	    showsHorizontalScrollIndicator={false}
+								 	showsHorizontalScrollIndicator={false}
 						  			horizontal={true}
 									enableEmptySections={true}
 							        dataSource={this.state.dataSource}
@@ -117,9 +116,7 @@ export default class Forecast extends Component {
 	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat='+lat+'&lon='+lon);
 	    let responseJson = await response.json();
         this.props.callbackCity(responseJson.city);
-
-
-	    var weatherList  =responseJson.list;
+	    var weatherList = responseJson.list;
 	    
 	    var goodDayArray=[];
 		var weatherColorArray=[];
@@ -127,7 +124,7 @@ export default class Forecast extends Component {
 			var item = weatherList[i];
 			var icon = item.weather[0].icon;
 			
-			if (icon.match('01')){
+			if (icon.match('01')||icon.match('01')){
 		        goodDayArray.push(item);
 				color = '#00F000';
 		    } else{
@@ -155,6 +152,7 @@ export default class Forecast extends Component {
 			});
 	    } catch(error) {
 	      console.error(error);
+			this.props.callbackServerError("fail server");
 	    }
 
 		this.props.callbackWashdate (goodDayArray) 	

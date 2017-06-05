@@ -57,11 +57,11 @@ export default class CarState extends Component {
     }    
 	
 	handlePress = (what) => {
-		console.log(what);
  	    this.setState({
 	      carState: this.state.carState=what 
 	    });
 	 	this.refs['roundInstance'].snapTo({index: this.state.carState});
+		this.props.callbackState (this.state.carState); 	
 	}
 }
 var styles = StyleSheet.create({
