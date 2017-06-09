@@ -15,29 +15,20 @@ export default class Car extends Component {
 	}  
 
     render() {
-    	return <View style={styles.carWheelContainerStyle}>
+    	const carStyle = this.props.style.carStyle ;
+    	return <View style={carStyle}>
 		 	<Image 
-				style={styles.carWheelStyle}
+				style={styles.carImageStyle}
     			source={car_wheel}/>
     	</View>
     }    
 }
 var styles = StyleSheet.create({
-	carWheelStyle:{
+	carImageStyle:{
 		width:200,
-		bottom:10,
 		resizeMode: 'contain',
 		height:70,
 		marginLeft:5,
-		marginRight:5
-
-	},
-	
-	carWheelContainerStyle:{
-		position: 'absolute',
-		right:0,
-		left:0,
-		bottom:170,
-		alignItems:'center'
-	},
- });
+		marginRight:5,
+	},	
+});

@@ -32,31 +32,29 @@ export default class Forecast extends Component {
 	}  
 
 	componentDidMount() {
-		    navigator.geolocation.getCurrentPosition(
-		      (position) => {
-			   		this.getWeatherApi(position.coords);
-		      },
-		      (error) =>{
-		     	this.props.callbackLocationError(error);
-		      },
-		      {enableHighAccuracy: true, timeout: 20000, maximumAge: 5000}
-		    );
-
+	    navigator.geolocation.getCurrentPosition(
+	      (position) => {
+		   		this.getWeatherApi(position.coords);
+	      },
+	      (error) =>{
+	     	if(this.props.callbackLocationError!=null)this.props.callbackLocationError(error);
+	      },
+	      {enableHighAccuracy: false, timeout: 30000, maximumAge: 10000}
+	    );
 		    this.watchID = navigator.geolocation.watchPosition((position) => {
 			this.getWeatherApi(position.coords);
-		});
-	  	
-	  }
+		}); 	
+	}
     render() {
 		return <ScrollView
 					showsHorizontalScrollIndicator={false}
-			        horizontal={true}>
+ 			        horizontal={true}>
 
 				 	<View style={styles.scrollableView}>
-							<Image style={styles.backgroundStyle}							
+							<Image style={styles.backgroundStyle}								
 									source={background_street}/>
 					    	
-					 		<View style={styles.horizontalListView}>
+					 		<View style={this.props.isJustView? {height:0} : {height:105,bottom:10}}>
 					 			<LinearGradient
 						    		start={{x: 0.0, y: 0}} end={{x: 1, y: 0}}
 					    			style={{height:10}}
@@ -93,7 +91,8 @@ export default class Forecast extends Component {
 				 	</View>
 				</ScrollView> 
     }    
-    getItemDrawable(weather){
+    
+    	getItemDrawable(weather){
 		var drawable = icon_clear_sky;
 	    if (weather.icon.match('01'))drawable=icon_clear_sky;               
         if (weather.icon.match('02'))drawable=icon_few_clouds;
@@ -104,58 +103,26 @@ export default class Forecast extends Component {
 		if (weather.icon.match('50'))drawable=icon_mist;
 		return drawable;
 	}
+
 	getItemText(miliseconds){
 		return 	moment(miliseconds).format("ddd, D").toUpperCase();
 	}
 
+
 	async getWeatherApi(coords) {
+		if (this.props.isJustView)return;
 		let lat = coords.latitude;
-		var lon = coords.longitude;	
+		let lon = coords.longitude;	
 
-	    try {
-	    let response = await fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat='+lat+'&lon='+lon);
-	    let responseJson = await response.json();
-        this.props.callbackCity(responseJson.city);
-	    var weatherList = responseJson.list;
-	    
-	    var goodDayArray=[];
-		var weatherColorArray=[];
-		for (var i = 0; i < weatherList.length; i++) {
-			var item = weatherList[i];
-			var icon = item.weather[0].icon;
-			
-			if (icon.match('01')||icon.match('01')){
-		        goodDayArray.push(item);
-				color = '#00F000';
-		    } else{
-		    	if(goodDayArray.length<this.state.carState) goodDayArray =[];
-		    	color = '#FF6183';
-		    }
-		
-		    if (icon.match('02')){
-				color = '#FFC300';
-			}
-		
-			if (icon.match('03')||icon.match('04')){
-				color = '#FBFF3D';
-		    }
-		    
-		    if (icon.match('03')||icon.match('04')){
-				color = '#FBFF3D';
-			}
-			weatherColorArray.push(color,color);
-        } 
-
-	    this.setState({
-	    	dataSource: this.state.dataSource.cloneWithRows(weatherList),
-        	colorSource:this.state.colorSource=weatherColorArray	
-			});
-	    } catch(error) {
-	      console.error(error);
-			this.props.callbackServerError("fail server");
-	    }
-
-		this.props.callbackWashdate (goodDayArray) 	
+	    fetch('http://api.openweathermap.org/data/2.5/forecast/daily?&appid=f98dbbd0a843d201a2a5b407d984b04e&cnt=15&lat='+lat+'&lon='+lon)
+	        .then((response) => response.json())
+			.then((responseJson) => {	
+		    	this.analyseWeather(responseJson.list);		      
+	    		if (this.props.callbackCity!=null)this.props.callbackCity(responseJson.city);
+		      })
+      		.catch((error) => {
+     			if (this.props.callbackServerError!=null)this.props.callbackServerError("fail server");
+     		 });
 	}
 	
 	handleScroll=(event: Object)  => {		
@@ -163,6 +130,41 @@ export default class Forecast extends Component {
 	 		this.setState({
 				offset_x:this.state.offset_x
 	 		});
+	}
+	analyseWeather(weatherList){
+			var goodDayArray=[];
+			var weatherColorArray=[];
+			for (var i = 0; i < weatherList.length; i++) {
+				var item = weatherList[i];
+				var icon = item.weather[0].icon;
+				
+				if (icon.match('01')||icon.match('01')){
+			        goodDayArray.push(item);
+					color = '#00F000';
+			    } else{
+			    	if(goodDayArray.length<this.state.carState) goodDayArray =[];
+			    	color = '#FF6183';
+			    }
+			
+			    if (icon.match('02')){
+					color = '#FFC300';
+				}
+			
+				if (icon.match('03')||icon.match('04')){
+					color = '#FBFF3D';
+			    }
+			    
+			    if (icon.match('03')||icon.match('04')){
+					color = '#FBFF3D';
+				}
+				weatherColorArray.push(color,color);
+	        } 
+
+		    this.setState({
+		    	dataSource: this.state.dataSource.cloneWithRows(weatherList),
+	        	colorSource:this.state.colorSource=weatherColorArray	
+				});
+		if (this.props.callbackWashdate!=null)this.props.callbackWashdate (goodDayArray) 	
 	}
 }
 var styles = StyleSheet.create({
@@ -181,18 +183,8 @@ var styles = StyleSheet.create({
 		resizeMode: 'center',
 	},
 
-	horizontalListView:{
-		height:105,
-	},	
-
  	backgroundStyle:{
 		width:15*72+15*1,
- 		flex:1,
- 		height: undefined,
-    	bottom:-10,
-    	resizeMode:'cover',
- 	 	justifyContent: 'center',
-    	alignItems: 'center',
  	},
 
  	scrollableView:{

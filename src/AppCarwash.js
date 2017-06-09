@@ -3,121 +3,62 @@
  * https://github.com/facebook/react-native
  * @flow
  */
+import React, { Component} from 'react';
+import {Navigator,AppRegistry,View} from 'react-native';
 
-import React, { Component } from 'react';
-import moment from 'moment';
+import ErrorInternetPage from './ErrorInternetPage';
+import ErrorGpsPage from './ErrorGpsPage';
+import MainPage from './MainPage';
 
-import {	
-	AppRegistry,StyleSheet,Text,
-	View,Image,PermissionsAndroid} from 'react-native';
+import SplashPage from './SplashPage';
 
-import Interactable from 'react-native-interactable';
-import CarState from './CarState';
-import Car from './Car';
-import Forecast from './Forecast';
-
-let cloud = require('./img/cloud.png');
-let cloud_2=require('./img/cloud_2.png');
-let cloud_3=require('./img/cloud_3.png');
-let cloud_4=require('./img/cloud_4.png');
-
-const SUN_DAYS= 3;
-exports.title = 'Geolocation';
-
-export default class AppCarwash extends Component {
-constructor(props) {
-  super(props);
- 	this.state = 	{
- 		carState:0,
-		message:'Well... Let\'s wait for a better\n day for your car wash',
- 		washDate:"",
-		};
-
-}
-
-
-render() {
+class AppCarwash extends Component {
+  render() {
     return (
-    	<View style={styles.container}>	
-    		<Interactable.View style={{left :50,position:'absolute'}}>
-						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud}/>
-	       </Interactable.View>
-		
-			<Interactable.View style={{right: 50, top:175,position:'absolute'}}>
-				         	<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_2}/>
-	       </Interactable.View>
-			
-			<View style={{right :50,position:'absolute'}}>
-						<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_3}/>
-	       </View>
-		
-			<View style={{right: 250, top:125,position:'absolute'}}>
-				         	<Image style={{height:100,width:50,resizeMode:'contain'}}source={cloud_4}/>
-	       	</View>
-		
-
-			<View style={{marginLeft:16}}>
-				<Text style={{fontSize:14,color:'#ffffff',opacity:0.5}}>{this.state.country}</Text>				
-				<Text style={{fontSize:25,color:'white'}}>{ this.state.city}</Text>
-			</View>
-		
-			<View style={{top:50,alignItems:'center',justifyContent:'center'}}>
-				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff'}}>{this.state.message}</Text> 
-				<Text style={{textAlign:'center',fontSize:25,color:'#ffffff', textDecorationLine: 'underline' }} >{this.state.washDate}</Text>
-			</View>
-
-			<Forecast 
-				carState = {this.state.carState}
-				callbackWashdate={this.handleWashdate.bind(this)}
-				callbackCity={this.handleChanges.bind(this)}
-				callbackLocationError= {this.handleLocationError.bind(this)}
-				callbackServerError= {this.handleServerError.bind(this)}
-			/>
-				
-			<Car/>	
-			<CarState callbackState ={this.handleState.bind(this)}/>
-	   	</View>
+        <Navigator
+          initialRoute={{id: 'SplashPage', name: 'Index'}}
+          renderScene={this.renderScene.bind(this)}
+          configureScene={(route) => {
+            if (route.sceneConfig) {
+              return route.sceneConfig;
+            }
+            return Navigator.SceneConfigs.FloatFromRight;
+          }} />
     );
   }
-
-	handleLocationError(result){
-		console.log('location',result);
-	}
-
-	handleServerError(result){
-		console.Let('server',result);
-	}
-
-	handleWashdate(result){
-		console.log('result',result);
-		if (result.length>=this.state.carState){
-			this.setState({
-				message:this.state.message='We recommend you to\n wash your car on:',
-				washDate:this.state.washDate=moment(result[0].dt*1000).format("dddd, D"),
-			}); 
-		}
-	}
-	handleChanges(result) {
-    	this.setState({
-    		city:this.state.city = result.name,
-    		country:this.state.country = result.country
-    	});
-    }	
-
-	handleState(result) {
-		console.log('state',result);
-		this.setState({
-			carState:this.state.carState = result,
-		});
-	}	
+ 
+  renderScene(route, navigator) {
+    var routeId = route.id;
+    if (routeId === 'SplashPage') {
+      return (
+        <SplashPage
+          navigator={navigator} />
+      );
+    }
+    if (routeId === 'MainPage') {
+      return (
+        <MainPage
+          navigator={navigator} />
+      );
+    }
+    if (routeId === 'LoadingPage') {
+      return (
+        <LoadingPage
+          navigator={navigator} />
+      );
+    }
+    if (routeId === 'ErrorGpsPage') {
+      return (
+        <ErrorGpsPage
+          navigator={navigator} />
+      );
+    }
+    if (routeId === 'ErrorInternetPage') {
+      return (
+        <ErrorInternetPage
+          navigator={navigator} />
+      );
+    }
+  }
 }
-
-var styles = StyleSheet.create({
-	container:{
-		backgroundColor:'#046B9E',
-		flex:1
-	}
-
-});
-
 AppRegistry.registerComponent('AppCarwash', () => AppCarwash);
